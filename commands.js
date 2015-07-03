@@ -21,13 +21,13 @@
      * The j key; move the cursor down to the line below.
      *
      * The location of the cursor's x position on the line below depends
-     * on the previous saved x position and the length of the line below.  
+     * on the previous saved x position and the length of the line below.
      * On successful movements left or right, the x position is saved.
-     * 
+     *
      * If the last saved x position is less than or equal to the length of the
      * line below, move the cursor down and to the last saved x position.
-     * 
-     * Otherwise, the line below is not long enough so move the cursor down and 
+     *
+     * Otherwise, the line below is not long enough so move the cursor down and
      * to the end of the line.
      */
     var j = function(row, col) {
@@ -47,16 +47,16 @@
 
     /**
      * The k key; move the cursor up to the line above.
-     * 
-     * Similar to the j key, the location of the cursor's x position on the 
-     * line above depends on the previous saved x position and the length of 
-     * the line above. On successful movements left or right, the x position 
+     *
+     * Similar to the j key, the location of the cursor's x position on the
+     * line above depends on the previous saved x position and the length of
+     * the line above. On successful movements left or right, the x position
      * is saved.
      *
      * If the last saved x position is less than or equal to the length of the
      * line above, move the cursor up and to the last saved x position.
-     * 
-     * Otherwise, the line above is not long enough so move the cursor up and 
+     *
+     * Otherwise, the line above is not long enough so move the cursor up and
      * to the end of the line.
      */
     var k = function(row, col) {
@@ -149,8 +149,8 @@
             // Try to find next word on current line
             var line = buffer.lines[r];
             var newCol = wHelper(line, c);
-            return newCol >= 0 
-                ? new commands.Result(r, newCol, newCol, mode) 
+            return newCol >= 0
+                ? new commands.Result(r, newCol, newCol, mode)
                 : null;
         };
 
@@ -159,11 +159,11 @@
             var line = buffer.lines[r];
             if (line.length() == 0)
                 return new commands.Result(r, 0, 0, mode);
-            
+
             // Go to the beginning of the next word
             var newCol = match.forward(line.chars, strings.nonWhiteSpaceRegex, 0);
-            return newCol >= 0 
-                ? new commands.Result(r, newCol, newCol, mode) 
+            return newCol >= 0
+                ? new commands.Result(r, newCol, newCol, mode)
                 : null;
         };
 
@@ -193,8 +193,8 @@
         var findEndOfWordFunc = function(r, c) {
             var line = buffer.lines[r];
             var newCol = eHelper(line, c);
-            return newCol >= 0 
-                ? new commands.Result(r, newCol, newCol, mode) 
+            return newCol >= 0
+                ? new commands.Result(r, newCol, newCol, mode)
                 : null;
         };
 
@@ -226,8 +226,8 @@
     };
 
     /**
-     * Helper function for the commands that can move the cursor across lines 
-     * if they do not find their next position on the current line. Examples 
+     * Helper function for the commands that can move the cursor across lines
+     * if they do not find their next position on the current line. Examples
      * include the w, b, and e keys.
      *
      * First apply the action to the line that the cursor is on.  If there
@@ -250,7 +250,7 @@
 
         // Try remaining lines
         var newRow;
-        for (newRow = row + offset; 
+        for (newRow = row + offset;
              newRow >= 0 && newRow < buffer.lines.length;
              newRow += offset) {
              result = restOfLinesFunc(newRow, 0);
@@ -263,7 +263,7 @@
     };
 
     /**
-     * Helper function to find the position of the next word on the 
+     * Helper function to find the position of the next word on the
      * given line, or -1 if there are no more words on the line.
      */
     var wHelper = function(line, col) {
@@ -295,17 +295,17 @@
     /**
      * Helper function for the e key.
      *
-     * Finds the position of the end of the current word. If the cursor is 
+     * Finds the position of the end of the current word. If the cursor is
      * already on the the end of a word or on whitspace, go to the end of
      * the next word.
      */
     var eHelper = function(line, col) {
         if (col >= line.length())
             return -1;
-    
+
         // Find the next word; any non-whitespace character will do
         var findWordResult = match.forward(
-            line.chars, 
+            line.chars,
             strings.nonWhiteSpaceRegex,
             col + 1);
 
@@ -326,7 +326,7 @@
             }
             else {
                 // If the last char was whitespace, find a non whitespace char
-                regex = strings.nonWhiteSpaceRegex; 
+                regex = strings.nonWhiteSpaceRegex;
             }
 
             lastChar = c;
@@ -334,11 +334,11 @@
         };
 
         var findEndOfWordResult = match.forwardFactory(
-            line.chars, 
-            findEndOfWordRegexFactory, 
+            line.chars,
+            findEndOfWordRegexFactory,
             findWordResult + 1);
 
-        return  findEndOfWordResult >= 0 
+        return  findEndOfWordResult >= 0
             ? findEndOfWordResult - 1
             : -1;
     };
@@ -353,6 +353,25 @@
         return new commands.Result(row, newCol, newCol, mode, true);
     };
 
+    var delChar = function(row, col) {
+        var newCol;
+
+        if (col === 0) {
+            if (row === 0) {
+                return null;
+            }
+
+            buffer.mergeLines(row - 1, row);
+            return new commands.Result(row - 1, col, 0, mode, true);
+
+        } else {
+            newCol = col - 1;
+            buffer.lines[row].remove(newCol);
+            return new commands.Result(row, col, newCol, mode, true);
+        }
+
+    };
+
     /**
      * Return the command function that corresponds to the given key code.
      */
@@ -363,6 +382,7 @@
             case 48:  return zero;
             case 101: return e;
             case 105: return i;
+            case 8: // delete in normal mode should move cursor left
             case 104: return h;
             case 106: return j;
             case 107: return k;
@@ -399,6 +419,9 @@
         else if (code == 27) {
             // User hit escape to leave insert mode
             result = esc(row, col);
+        }
+        else if (code === 8) {
+            result = delChar(row, col);
         }
         else {
             // User is typing text in insert mode

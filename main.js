@@ -7,7 +7,7 @@ $(document).ready(function() {
     });
 
     $(document).keyup(function(e) {
-        if (e.keyCode == 27)
+        if (e.keyCode == 27 || e.keyCode === 8)
             vim.handleKey(e.keyCode);
     });
 });

@@ -9,11 +9,11 @@
 
     /**
      * Calculates the new row based on the current row and the
-     * given offset and returns the line at the new row.  
+     * given offset and returns the line at the new row.
      *
      * If the new row is less than zero, return the first line.
      * If the new row is greater than the number of lines, return
-     * the the last line.
+     * the last line.
      */
     buffer.offset = function(row, diff) {
         var numLines = this.lines.length;
@@ -43,5 +43,16 @@
         return this.lines.map(function(line) {
             return line.toString();
         });
-    }
+    };
+
+    /**
+     * Concat the following two lines
+     */
+
+    buffer.mergeLines = function(i, j) {
+        buffer.lines[i] = new buffer.line(buffer.lines[i].toString() +
+            buffer.lines[j].toString(), i);
+        buffer.lines.remove(j);
+    };
+
 })(window.buffer = window.buffer || {});
